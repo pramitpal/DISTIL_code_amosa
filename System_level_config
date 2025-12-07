@@ -1,0 +1,44 @@
+topology = anynet;
+
+
+routing_function = min;
+network_file = system_level_anynet_file;
+traffic = trace_based;
+injection_process = trace_based;
+
+use_read_write = 0;
+
+sample_period = 10000;
+injection_rate = 0.01; //check
+
+
+// Constant delays
+routing_delay = 1;
+vc_alloc_delay = 1;
+sw_alloc_delay = 1;
+st_final_delay = 1;
+
+packet_size = 1; //fixed
+
+vc_allocator = separable_input_first; 
+sw_allocator = separable_input_first;
+alloc_iters  = 1;
+
+sample_period = 100000;
+warmup_periods = 0;
+max_samples = 1;
+
+num_vcs = 3;
+
+buf_size = 10;
+vc_buf_size = 10;
+output_buffer_size = 1;
+
+private_bufs = 1;
+private_buf_size = 1;
+
+sim_power = 1; //fixed
+
+tech_file = techfile_system.txt; //change accordingly 
+
+channel_width  = 128;
