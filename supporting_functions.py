@@ -699,7 +699,7 @@ class SNNMapper:
         print(f"Layers in Main Mapping: {sorted(layers_in_main)}")
         
         if unmapped_layers:
-            print(f"\n{'=' * 60}")
+            print(f"\n{'-' * 60}")
             print("UNMAPPED LAYERS (Sequential from cutoff)")
             print("=" * 60)
             print(f"Number of Unmapped Layers: {len(unmapped_layers)}")
@@ -716,7 +716,7 @@ class SNNMapper:
         else:
             print("\nAll layers mapped successfully!")
         
-        print(f"\n{'=' * 60}")
+        print(f"\n{'-' * 60}")
         print("LAYER REQUIREMENTS")
         print("=" * 60)
         chip_capacity = self.NT * self.NPE
@@ -2017,16 +2017,27 @@ def add_lif_tiles(chiplet_mapping, groupings, NT, LIF_T, NPE, mesh_rows, mesh_co
 
 
 def get_balanced_solutions(df, n=1, w_mem=0.5, w_cost=0.5):
-    """Select top n balanced solutions from the DataFrame."""
+    """Select top n balanced solutions from the DataFrame.
+    
+    If n exceeds the number of rows, return all rows.
+    Lower weighted_score is better (since we're minimizing normalized memory and cost).
+    """
+    if df.empty:
+        return df.copy()
+
     temp_df = df.copy()
 
     mem = temp_df['total_lif_tiles']
     cost = temp_df['total_cost']
 
+    # Normalize memory and cost to [0, 1] (min = 0, max = 1)
     norm_mem = (mem - mem.min()) / (mem.max() - mem.min()) if mem.max() > mem.min() else 0
     norm_cost = (cost - cost.min()) / (cost.max() - cost.min()) if cost.max() > cost.min() else 0
 
     temp_df['weighted_score'] = (w_mem * norm_mem) + (w_cost * norm_cost)
+
+    # Ensure n does not exceed the number of available rows
+    n = min(n, len(temp_df))
 
     top_indices = temp_df['weighted_score'].nsmallest(n).index
 
@@ -5055,7 +5066,7 @@ def run_amosa_optimization(
             continue
 
         if debug_here:
-            print(f"num_groups_list: {num_groups_list}")
+            print(f"num_groups_list: [{num_groups_list[0]}-{num_groups_list[-1]}]")
 
         for num_groups in num_groups_list:
             try:
@@ -5070,7 +5081,7 @@ def run_amosa_optimization(
                     current_iterations_per_temp = iterations_per_temp
 
                 if debug_here:
-                    print(f"\n--- num_groups={num_groups}, mesh={current_mesh_rows}x{current_mesh_cols} ---")
+                    print(f"--- num_groups={num_groups}, mesh={current_mesh_rows}x{current_mesh_cols} ---")
 
                 optimizer = AMOSAGroupingOptimizer(
                     mapper=mapper,
@@ -5175,7 +5186,7 @@ def run_amosa_optimization(
 
     # Summary
     if debug_here:
-        print(f"\n{'='*60}")
+        print(f"\n{'-'*60}")
         print("Summary:")
         for lif_t in LIF_T_list:
             all_size = len(all_pareto_results.get(lif_t, pd.DataFrame()))
@@ -5261,9 +5272,9 @@ def optimize_lif_placements(
     # Process each LIF_T value
     for LIF_T_each in valid_lif_t_list:
         if debug >= 1:
-            print(f"\n{'='*60}")
+            print(f"\n{'-'*60}")
             print(f"Optimizing for LIF_T = {LIF_T_each}")
-            print(f"{'='*60}")
+            print(f"{'-'*60}")
         
         try:
             balanced_solution = balanced_results[LIF_T_each]
@@ -5474,9 +5485,9 @@ def optimize_lif_placements(
     
     # Final summary
     if debug >= 1:
-        print(f"\n{'='*60}")
+        print(f"\n{'-'*60}")
         print("Optimization Summary:")
-        print(f"{'='*60}")
+        print(f"{'-'*60}")
         for lif_t in valid_lif_t_list:
             if lif_t in balanced_results_optimized:
                 size = len(balanced_results_optimized[lif_t])
@@ -5606,9 +5617,9 @@ def run_distil_optimized_lif(
     # Store results for each LIF_T value
     for LIF_T_val in valid_lif_t_list:
         if debug >= 1:
-            print(f"\n{'='*100}")
+            print(f"\n{'-'*100}")
             print(f"PROCESSING LIF_T = {LIF_T_val}")
-            print(f"{'='*100}")
+            print(f"{'-'*100}")
         
         # ============================================
         # CREATE MAPPER FOR THIS LIF_T VALUE
@@ -5705,7 +5716,7 @@ def run_distil_optimized_lif(
                 last_index = get_last_index_to_check(balanced_solutions_current, max_lif_tiles)
             else:
                 last_index = len(balanced_solutions_current) - 1
-            print(f"  Processing up to index {last_index} based on max_lif_tiles={max_lif_tiles}")
+            # print(f"  Processing up to index {last_index} based on max_lif_tiles={max_lif_tiles}")
         except Exception as e:
             if debug >= 2:
                 print(f"  Warning: get_last_index_to_check failed: {e}")
@@ -5749,9 +5760,9 @@ def run_distil_optimized_lif(
                             print(f"  Warning: Visualization failed: {viz_err}")
 
                 if debug >= 1:
-                    print(f"\n{'='*80}")
+                    print(f"\n{'-'*80}")
                     print(f"CONFIG {config_idx}: {original_grouping_num} Groups (LIF_T={LIF_T_val}, System={mesh_cols}x{mesh_rows})")
-                    print(f"{'='*80}")
+                    print(f"{'-'*80}")
                     print(f"Initial chiplets from mapping: {max_chiplets_used}")
 
                 # Initialize accumulators
@@ -5786,9 +5797,9 @@ def run_distil_optimized_lif(
                 NoI_mesh_layout = [[(r * mesh_cols + c) for c in range(mesh_cols)] for r in range(mesh_rows)]
                 NoI_mesh_layout_with_DRAM = [[r * mesh_cols + c for c in range(mesh_cols)] for r in range(mesh_rows)] + [[mesh_rows * mesh_cols]]
 
-                if debug >= 1:
-                    print(f"Mapped: {len(mapped_layers)} layers {mapped_layers}")
-                    print(f"Unmapped: {len(unmapped_layers)} layers {unmapped_layers}\n")
+                # if debug >= 1:
+                #     print(f"Mapped: {len(mapped_layers)} layers {mapped_layers}")
+                #     print(f"Unmapped: {len(unmapped_layers)} layers {unmapped_layers}\n")
 
                 # ============================================
                 # FIRST MAPPING - Process mapped layers
@@ -6080,7 +6091,7 @@ def run_distil_optimized_lif(
                 total_area_sq_mm = max_chiplets_used * chiplet_area
 
                 if debug >= 1:
-                    print(f"\n{'='*80}")
+                    print(f"\n{'-'*80}")
                     print(f"RESOURCES")
                     print(f"{'-'*80}")
                     print(f"Max Chiplets Used: {max_chiplets_used}")
@@ -6158,7 +6169,7 @@ def run_distil_optimized_lif(
                 tops_per_area = 1e3 / (end_to_end_latency * total_area_sq_mm) if end_to_end_latency > 0 and total_area_sq_mm > 0 else 0
 
                 if debug >= 1:
-                    print(f"\n{'='*80}")
+                    print(f"\n{'-'*80}")
                     print(f"FINAL METRICS")
                     print(f"{'-'*80}")
                     print(f"Latency:")
@@ -6174,7 +6185,7 @@ def run_distil_optimized_lif(
                     print(f"  Total: {end_to_end_energy_mJ:.4f} mJ")
                     print(f"\nMetrics:")
                     print(f"  TOPS/Area: {tops_per_area:.6f}")
-                    print(f"{'='*80}\n")
+                    print(f"{'-'*80}\n")
 
                 # Store results
                 all_results.append({
@@ -6208,9 +6219,9 @@ def run_distil_optimized_lif(
         # ============================================
         if all_results:
             # if debug >= 1:
-            #     print(f"\n{'='*80}")
+            #     print(f"\n{'-'*80}")
             #     print(f"SUMMARY OF ALL CONFIGURATIONS FOR LIF_T = {LIF_T_val}")
-            #     print(f"{'='*80}\n")
+            #     print(f"{'-'*80}\n")
 
             distil_summary_df_current = pd.DataFrame([
                 {k: v for k, v in result.items() if k not in ['Groupings', 'Chiplet_mapping']}
@@ -6232,9 +6243,9 @@ def run_distil_optimized_lif(
     # FINAL SUMMARY - All LIF_T values together
     # ============================================
     # if debug >= 1:
-    #     print(f"\n{'='*100}")
+    #     print(f"\n{'-'*100}")
     #     print("FINAL SUMMARY - ALL LIF_T VALUES COMBINED")
-    #     print(f"{'='*100}\n")
+    #     print(f"{'-'*100}\n")
 
     # Combine all results into a single DataFrame
     all_combined_results = []
