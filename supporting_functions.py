@@ -3536,7 +3536,8 @@ def run_global_lif_case(
                 'start_layer': 1,
                 'end_layer': len(mapper.weights),
                 'total_lif_tiles': LIF_needed,
-                'lif_distribution': [(result[0][0][0], LIF_needed)],
+                # 'lif_distribution': [(result[0][0][0], LIF_needed)],
+                'lif_distribution': [(np.floor(len(cc)/2).astype(int).item(), LIF_needed)],
                 'cost': 0.0,
             }
         ]
@@ -4167,7 +4168,8 @@ def run_global_lif_case(
             if lif_index_to_remove is not None:
                 cc_optimized.pop(lif_index_to_remove)
 
-            optimized_lif_pos = result[0][0][0]
+            # optimized_lif_pos = result[0][0][0]
+            optimized_lif_pos = np.floor(len(cc_optimized)/2).astype(int).item()
             cc_optimized.insert(optimized_lif_pos, LIF_chiplet)
 
             # Initialize accumulators for optimized mapping
