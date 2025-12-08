@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # 'LVVITB' 4x4
     # 'VIT'6x6
     # 'SPIKFORMER'5x5
-    MODEL_NAME = 'densenet121'
+    MODEL_NAME = 'resnet50'
     network = model_dict[MODEL_NAME]
     # NoC/NoI parameters
     NoC_buswidth = 16
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     NoC_cycle_time = 1e3 / NoC_Freq
     NoI_cycle_time = 1e3 / NoI_Freq
     # AMOSA parameters
-    max_num_groups = 1
+    max_num_groups = 25
     iterations_per_temp = 50
     inter_cost=(NoC_Freq*NoC_buswidth*NoI_wire_length)/ (NoI_Freq*NoI_buswidth*NoC_wire_length)
     w_mem = 0.5
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     tile_area = 0.25
     chiplet_area = 4
     # System configuration
-    mesh_rows, mesh_cols = 5, 5
+    mesh_rows, mesh_cols = 4, 4
     LIF_T_list = [6]
     # LIF_T_list = range(1, NT)
     # Traffic and DRAM parameters
@@ -62,8 +62,9 @@ if __name__ == "__main__":
         NoI_wire_length=NoI_wire_length, NoC_Freq=NoC_Freq, NoI_Freq=NoI_Freq, TOPS=TOPS, \
         ENERGY_PER_MAC_pj=ENERGY_PER_MAC_pj, tile_area=tile_area, chiplet_area=chiplet_area, \
         mesh_rows=mesh_rows, mesh_cols=mesh_cols, LIF_T_list=LIF_T_list, percent_keep=percent_keep, \
-        min_traffic=min_traffic, eta=eta, DRAM_BW=DRAM_BW,run_optimized=False)
-
+        min_traffic=min_traffic, eta=eta, DRAM_BW=DRAM_BW,run_optimized=True)
+    cleanup_booksim_files()
+    
     # Run AMOSA optimization
     all_pareto_results, balanced_results = run_amosa_optimization(
         network=network,LIF_T_list=LIF_T_list,NPE=NPE,NT=NT,xbar_size=xbar_size,SRAM_KB_per_tile=SRAM_KB_per_tile,\
@@ -71,6 +72,7 @@ if __name__ == "__main__":
         NoI_buswidth=NoI_buswidth,mesh_rows=mesh_rows,mesh_cols=mesh_cols,max_num_groups=max_num_groups,\
         iterations_per_temp=iterations_per_temp,inter_cost=inter_cost,w_mem=w_mem,N=N,\
         debug=0,debug_here=True)
+    cleanup_booksim_files()
     # Optimize LIF placements for balanced solutions
     balanced_results_optimized = optimize_lif_placements(network=network,balanced_results=balanced_results,NT=NT,\
         NPE=NPE,xbar_size=xbar_size,XBAR_bits_per_cell=XBAR_bits_per_cell,\
@@ -90,6 +92,7 @@ if __name__ == "__main__":
         percent_keep=percent_keep, min_traffic=min_traffic,
         eta=eta, DRAM_BW=DRAM_BW, max_lif_tiles=1e3,
         visualize=False, inter_cost=inter_cost, debug=1)
+    cleanup_booksim_files()
     
     
     # ============================================
@@ -114,7 +117,7 @@ if __name__ == "__main__":
     # SHOW DISTIL RESULT SUMMARY FOR BALANCED SOLUTIONS
     # ============================================
     print("\n" + "-" * 70+"\n" + " " * 7+f" DISTIL RESULTS - PERFORMANCE METRICS({MODEL_NAME})"+ "\n" + "-" * 70)
-    amosa_cols = ['lif_t', 'End_to_end_latency_ms','TOPS/Area','Total_area_sq_mm','LIF_MEM(KB)']
+    amosa_cols = ['lif_t', 'End_to_end_latency_ms','TOPS/Area','num_groups','Total_area_sq_mm','LIF_MEM(KB)']
     all_dfs = [df[amosa_cols] for df in distil_results_by_lif.values() if not df.empty]
     if all_dfs:
         print(pd.concat(all_dfs, ignore_index=True).to_string(index=False))
